@@ -1,0 +1,69 @@
+// Version Vercel Blob Storage pour app/api/upload/route.ts
+// Remplacez le contenu de app/api/upload/route.ts par ce code pour utiliser Vercel Blob
+
+import { NextRequest, NextResponse } from "next/server"
+import { auth } from "@/auth"
+import { put } from "@vercel/blob"
+
+export async function POST(request: NextRequest) {
+  try {
+    const session = await auth()
+
+    if (!session || (session.user as any)?.role !== "ADMIN") {
+      return NextResponse.json(
+        { error: "Non autorisé" },
+        { status: 401 }
+      )
+    }
+
+    const formData = await request.formData()
+    const file = formData.get("file") as File
+
+    if (!file) {
+      return NextResponse.json(
+        { error: "Aucun fichier fourni" },
+        { status: 400 }
+      )
+    }
+
+    // Vérifier le type de fichier
+    const allowedTypes = ["image/png", "image/jpeg", "image/jpg", "image/webp", "image/gif"]
+    if (!allowedTypes.includes(file.type)) {
+      return NextResponse.json(
+        { error: "Type de fichier non autorisé. Formats acceptés: PNG, JPEG, JPG, WEBP, GIF" },
+        { status: 400 }
+      )
+    }
+
+    // Vérifier la taille (max 5MB)
+    const maxSize = 5 * 1024 * 1024 // 5MB
+    if (file.size > maxSize) {
+      return NextResponse.json(
+        { error: "Le fichier est trop volumineux. Taille maximale: 5MB" },
+        { status: 400 }
+      )
+    }
+
+    // Générer un nom de fichier unique
+    const timestamp = Date.now()
+    const originalName = file.name.replace(/[^a-zA-Z0-9.-]/g, "_")
+    const filename = `projects/${timestamp}_${originalName}`
+
+    // Upload vers Vercel Blob Storage
+    const blob = await put(filename, file, {
+      access: 'public',
+    })
+
+    return NextResponse.json({ 
+      success: true,
+      path: blob.url  // URL complète de l'image sur Vercel Blob
+    })
+  } catch (error) {
+    console.error("Error uploading file:", error)
+    return NextResponse.json(
+      { error: "Erreur lors de l'upload du fichier" },
+      { status: 500 }
+    )
+  }
+}
+
