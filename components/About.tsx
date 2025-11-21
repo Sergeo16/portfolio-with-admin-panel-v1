@@ -29,7 +29,7 @@ const aboutSections = [
     {
         id: 4,
         title: "Maintenance Informatique et Support",
-        description: "Installation, configuration, réparation des ordinateurs, assiatance et conseils.",
+        description: "Installation, configuration, réparation des ordinateurs, assistance technique et conseils.",
         icon: <GrVmMaintenance className="text-accent scale-150" />,
     },
 ];
